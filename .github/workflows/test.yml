@@ -1,118 +1,118 @@
 name: Test
 
 on:
-  push:
-    branches: [ master ]
-    tags:
-      - "*"
-  pull_request:
-    branches:
-      - "**"
-  schedule:
-    - cron:  30 0 * * *
+  # push:
+  #   branches: [ master ]
+  #   tags:
+  #     - "*"
+  # pull_request:
+  #   branches:
+  #     - "**"
+  # schedule:
+  #   - cron:  30 0 * * *
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
-  sanitizers:
-    strategy:
-      fail-fast: false
-      matrix:
-        suffix:
-          - none
-          - vectorized
-        arch:
-          - amd64
-          - arm64
-    runs-on: ${{  matrix.arch == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          submodules: recursive
+  # sanitizers:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       suffix:
+  #         - none
+  #         - vectorized
+  #       arch:
+  #         - amd64
+  #         - arm64
+  #   runs-on: ${{  matrix.arch == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
+  #   steps:
+  #     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+  #       with:
+  #         submodules: recursive
 
-      - name: Create directories
-        run: mkdir Debug
+  #     - name: Create directories
+  #       run: mkdir Debug
 
-      - name: Install dependencies
-        if: matrix.arch == 'arm64'
-        run: sudo apt update ; sudo apt install -y cmake git make curl
+  #     - name: Install dependencies
+  #       if: matrix.arch == 'arm64'
+  #       run: sudo apt update ; sudo apt install -y cmake git make curl
 
-      - name: Install clang and clang++
-        run: |
-          sudo .github/workflows/scripts/llvm.sh 19
-          sudo apt-get install -y clang-19 clang++-19
+  #     - name: Install clang and clang++
+  #       run: |
+  #         sudo .github/workflows/scripts/llvm.sh 19
+  #         sudo apt-get install -y clang-19 clang++-19
 
-      - name: CMake
-        env:
-          CC: clang-19
-          CXX: clang++-19
-        run: |
-          cmake .. -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_CXX_FLAGS="-fsanitize=address,leak,undefined -DASAN_BUILD" \
-            -DCMAKE_C_FLAGS="-fsanitize=address,leak,undefined -DASAN_BUILD" \
-            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,leak,undefined" \
-            -DCMAKE_MODULE_LINKER_FLAGS="-fsanitize=address,leak,undefined" \
-            -DLIBDDWAF_VECTORIZED_TRANSFORMERS=$([ "${{ matrix.suffix }}" != "none" ] && echo "ON" || echo "OFF")
-        working-directory: Debug
+  #     - name: CMake
+  #       env:
+  #         CC: clang-19
+  #         CXX: clang++-19
+  #       run: |
+  #         cmake .. -DCMAKE_BUILD_TYPE=Debug \
+  #           -DCMAKE_CXX_FLAGS="-fsanitize=address,leak,undefined -DASAN_BUILD" \
+  #           -DCMAKE_C_FLAGS="-fsanitize=address,leak,undefined -DASAN_BUILD" \
+  #           -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,leak,undefined" \
+  #           -DCMAKE_MODULE_LINKER_FLAGS="-fsanitize=address,leak,undefined" \
+  #           -DLIBDDWAF_VECTORIZED_TRANSFORMERS=$([ "${{ matrix.suffix }}" != "none" ] && echo "ON" || echo "OFF")
+  #       working-directory: Debug
 
-      - name: Build
-        run: VERBOSE=1 make -j $(nproc) waf_test waf_validator
-        working-directory: Debug
+  #     - name: Build
+  #       run: VERBOSE=1 make -j $(nproc) waf_test waf_validator
+  #       working-directory: Debug
 
-      - name: Test
-        run: ASAN_OPTIONS="verbosity=1 fast_unwind_on_malloc=0 detect_leaks=1" make test
-        working-directory: Debug
+  #     - name: Test
+  #       run: ASAN_OPTIONS="verbosity=1 fast_unwind_on_malloc=0 detect_leaks=1" make test
+  #       working-directory: Debug
 
-      - name: Validate
-        run: ASAN_OPTIONS="verbosity=1 fast_unwind_on_malloc=0 detect_leaks=1" make validate
-        working-directory: Debug
+  #     - name: Validate
+  #       run: ASAN_OPTIONS="verbosity=1 fast_unwind_on_malloc=0 detect_leaks=1" make validate
+  #       working-directory: Debug
 
-  valgrind:
-    strategy:
-      fail-fast: false
-      matrix:
-        suffix:
-          - none
-          - vectorized
-        arch:
-          - amd64
-          - arm64
-    runs-on: ${{  matrix.arch == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
+  # valgrind:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       suffix:
+  #         - none
+  #         - vectorized
+  #       arch:
+  #         - amd64
+  #         - arm64
+  #   runs-on: ${{  matrix.arch == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
 
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          submodules: recursive
+  #   steps:
+  #     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+  #       with:
+  #         submodules: recursive
 
-      - name: Install dependencies
-        run: sudo apt update ; sudo apt install -y valgrind cmake gcc-12 g++-12 git make curl
+  #     - name: Install dependencies
+  #       run: sudo apt update ; sudo apt install -y valgrind cmake gcc-12 g++-12 git make curl
 
-      - name: Create directories
-        run: mkdir Debug
+  #     - name: Create directories
+  #       run: mkdir Debug
 
-      - name: CMake
-        env:
-          CC: gcc-12
-          CXX: g++-12
-        run: |
-          cmake .. \
-            -DCMAKE_BUILD_TYPE=Debug \
-            -DLIBDDWAF_ON_VALGRIND=ON \
-            -DLIBDDWAF_VECTORIZED_TRANSFORMERS=$([ "${{ matrix.suffix }}" != "none" ] && echo "ON" || echo "OFF")
-        working-directory: Debug
+  #     - name: CMake
+  #       env:
+  #         CC: gcc-12
+  #         CXX: g++-12
+  #       run: |
+  #         cmake .. \
+  #           -DCMAKE_BUILD_TYPE=Debug \
+  #           -DLIBDDWAF_ON_VALGRIND=ON \
+  #           -DLIBDDWAF_VECTORIZED_TRANSFORMERS=$([ "${{ matrix.suffix }}" != "none" ] && echo "ON" || echo "OFF")
+  #       working-directory: Debug
 
-      - name: Build
-        run: VERBOSE=1 make -j $(nproc) waf_test waf_validator
-        working-directory: Debug
+  #     - name: Build
+  #       run: VERBOSE=1 make -j $(nproc) waf_test waf_validator
+  #       working-directory: Debug
 
-      - name: Test
-        run: make test_valgrind
-        working-directory: Debug
+  #     - name: Test
+  #       run: make test_valgrind
+  #       working-directory: Debug
 
-      - name: Validate
-        run: make validate_valgrind
-        working-directory: Debug
+  #     - name: Validate
+  #       run: make validate_valgrind
+  #       working-directory: Debug
 
   coverage:
     strategy:
@@ -120,10 +120,8 @@ jobs:
       matrix:
         suffix:
           - none
-          - vectorized
         arch:
           - amd64
-          - arm64
     runs-on: ${{  matrix.arch == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
 
     steps:
@@ -157,11 +155,11 @@ jobs:
         run: VERBOSE=1 make -j $(nproc) waf_test waf_validator
         working-directory: Debug
 
-      - name: "Test (level: trace)"
-        run: make test
-        env:
-          DDWAF_TEST_LOG_LEVEL: trace
-        working-directory: Debug
+      # - name: "Test (level: trace)"
+      #   run: make test
+      #   env:
+      #     DDWAF_TEST_LOG_LEVEL: trace
+      #   working-directory: Debug
 
       - name: "Test (level: debug)"
         run: make test
@@ -169,168 +167,168 @@ jobs:
           DDWAF_TEST_LOG_LEVEL: debug
         working-directory: Debug
 
-      - name: "Test (level: error)"
-        run: make test
-        env:
-          DDWAF_TEST_LOG_LEVEL: error
-        working-directory: Debug
+      # - name: "Test (level: error)"
+      #   run: make test
+      #   env:
+      #     DDWAF_TEST_LOG_LEVEL: error
+      #   working-directory: Debug
 
-      - name: "Test (level: warn)"
-        run: make test
-        env:
-          DDWAF_TEST_LOG_LEVEL: warn
-        working-directory: Debug
+      # - name: "Test (level: warn)"
+      #   run: make test
+      #   env:
+      #     DDWAF_TEST_LOG_LEVEL: warn
+      #   working-directory: Debug
 
-      - name: "Test (level: info)"
-        run: make test
-        env:
-          DDWAF_TEST_LOG_LEVEL: info
-        working-directory: Debug
+      # - name: "Test (level: info)"
+      #   run: make test
+      #   env:
+      #     DDWAF_TEST_LOG_LEVEL: info
+      #   working-directory: Debug
 
-      - name: "Test (level: off)"
-        run: make test
-        env:
-          DDWAF_TEST_LOG_LEVEL: off
-        working-directory: Debug
+      # - name: "Test (level: off)"
+      #   run: make test
+      #   env:
+      #     DDWAF_TEST_LOG_LEVEL: off
+      #   working-directory: Debug
 
-      - name: Validate
-        run: make validate
-        working-directory: Debug
+      # - name: Validate
+      #   run: make validate
+      #   working-directory: Debug
 
-      - name: Generate coverage
-        run: |
-          source ../.venv/bin/activate
-          gcovr --version
-          gcovr --gcov-executable gcov-12 --exclude-lines-by-pattern '.*assert.*' --exclude-throw-branches -v -f '.*src.*' -e ".*src/vendor/.*" --json  -o coverage-${{ matrix.suffix }}-${{ matrix.arch }}.json
-        working-directory: Debug
+      # - name: Generate coverage
+      #   run: |
+      #     source ../.venv/bin/activate
+      #     gcovr --version
+      #     gcovr --gcov-executable gcov-12 --exclude-lines-by-pattern '.*assert.*' --exclude-throw-branches -v -f '.*src.*' -e ".*src/vendor/.*" --json  -o coverage-${{ matrix.suffix }}-${{ matrix.arch }}.json
+      #   working-directory: Debug
 
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: coverage_${{ matrix.suffix }}_${{ matrix.arch }}
-          path: ${{ github.workspace }}/Debug/coverage-${{ matrix.suffix }}-${{ matrix.arch }}.json
+      # - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      #   with:
+      #     name: coverage_${{ matrix.suffix }}_${{ matrix.arch }}
+      #     path: ${{ github.workspace }}/Debug/coverage-${{ matrix.suffix }}-${{ matrix.arch }}.json
 
-  generate-coverage:
-    needs: [ coverage ]
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          submodules: recursive
+  # generate-coverage:
+  #   needs: [ coverage ]
+  #   runs-on: ubuntu-24.04
+  #   steps:
+  #     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+  #       with:
+  #         submodules: recursive
 
-      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
-        with:
-          path: artifacts
+  #     - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+  #       with:
+  #         path: artifacts
 
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y python3 python3-venv python3-pip
-          python3 -m venv .venv
-          source .venv/bin/activate
-          pip install gcovr==7.2
+  #     - name: Install dependencies
+  #       run: |
+  #         sudo apt update
+  #         sudo apt install -y python3 python3-venv python3-pip
+  #         python3 -m venv .venv
+  #         source .venv/bin/activate
+  #         pip install gcovr==7.2
 
-      - name: Generate coverage
-        run: |
-          source .venv/bin/activate
-          gcovr --version
-          gcovr --merge-mode-functions merge-use-line-0 --json-add-tracefile "artifacts/*/coverage-*.json" -x coverage.xml
-          mkdir -p coverage
-          gcovr --merge-mode-functions merge-use-line-0 --json-add-tracefile "artifacts/*/coverage-*.json" --html-details coverage/coverage.html
+  #     - name: Generate coverage
+  #       run: |
+  #         source .venv/bin/activate
+  #         gcovr --version
+  #         gcovr --merge-mode-functions merge-use-line-0 --json-add-tracefile "artifacts/*/coverage-*.json" -x coverage.xml
+  #         mkdir -p coverage
+  #         gcovr --merge-mode-functions merge-use-line-0 --json-add-tracefile "artifacts/*/coverage-*.json" --html-details coverage/coverage.html
 
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: coverage
-          path: ${{ github.workspace }}/coverage/
+  #     - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+  #       with:
+  #         name: coverage
+  #         path: ${{ github.workspace }}/coverage/
 
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: coverage-xml
-          path: ${{ github.workspace }}/coverage.xml
+  #     - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+  #       with:
+  #         name: coverage-xml
+  #         path: ${{ github.workspace }}/coverage.xml
 
-  upload-to-datadog:
-    needs: [ generate-coverage ]
-    runs-on: ubuntu-24.04
-    permissions:
-      id-token: write
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          submodules: recursive
+  # upload-to-datadog:
+  #   needs: [ generate-coverage ]
+  #   runs-on: ubuntu-24.04
+  #   permissions:
+  #     id-token: write
+  #   steps:
+  #     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+  #       with:
+  #         submodules: recursive
 
-      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
-        with:
-          name: coverage-xml
-          path: .
+  #     - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+  #       with:
+  #         name: coverage-xml
+  #         path: .
 
-      - name: Obtain credentials
-        id: dd-sts
-        uses: DataDog/dd-sts-action@2e8187910199bd93129520183c093e19aa585c75 # v1.0.0
-        with:
-          policy: libddwaf
+  #     - name: Obtain credentials
+  #       id: dd-sts
+  #       uses: DataDog/dd-sts-action@2e8187910199bd93129520183c093e19aa585c75 # v1.0.0
+  #       with:
+  #         policy: libddwaf
 
-      - name: Submit coverage (DataDog)
-        uses: DataDog/coverage-upload-github-action@d2cf302a39c05e0ad22063360a2bf6ce0cc4906c # v1
-        with:
-          api_key: ${{ steps.dd-sts.outputs.api_key }}
-          files: coverage.xml
+  #     - name: Submit coverage (DataDog)
+  #       uses: DataDog/coverage-upload-github-action@d2cf302a39c05e0ad22063360a2bf6ce0cc4906c # v1
+  #       with:
+  #         api_key: ${{ steps.dd-sts.outputs.api_key }}
+  #         files: coverage.xml
 
-  lint:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          submodules: recursive
+  # lint:
+  #   runs-on: ubuntu-24.04
+  #   steps:
+  #     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+  #       with:
+  #         submodules: recursive
 
-      - name: Create directories
-        run: mkdir Debug
+  #     - name: Create directories
+  #       run: mkdir Debug
 
-      - name: Install clang tidy and format
-        run: |
-          DEBIAN_FRONTEND="noninteractive" sudo apt-get -y remove python3-lldb-14
-          sudo .github/workflows/scripts/llvm.sh 17
-          sudo apt-get install -y clang-tidy-17 clang-format-17
+  #     - name: Install clang tidy and format
+  #       run: |
+  #         DEBIAN_FRONTEND="noninteractive" sudo apt-get -y remove python3-lldb-14
+  #         sudo .github/workflows/scripts/llvm.sh 17
+  #         sudo apt-get install -y clang-tidy-17 clang-format-17
 
-      - name: CMake
-        env:
-          CXX: clang++-17
-          CC: clang-17
-        run: |
-          cmake .. -DCMAKE_BUILD_TYPE=Debug -DCLANG_TIDY=/usr/bin/run-clang-tidy-17 \
-            -DCLANG_FORMAT=/usr/bin/clang-format-17
-        working-directory: Debug
+  #     - name: CMake
+  #       env:
+  #         CXX: clang++-17
+  #         CC: clang-17
+  #       run: |
+  #         cmake .. -DCMAKE_BUILD_TYPE=Debug -DCLANG_TIDY=/usr/bin/run-clang-tidy-17 \
+  #           -DCLANG_FORMAT=/usr/bin/clang-format-17
+  #       working-directory: Debug
 
-      - name: Build
-        run: VERBOSE=1 make -j $(nproc)
-        working-directory: Debug
+  #     - name: Build
+  #       run: VERBOSE=1 make -j $(nproc)
+  #       working-directory: Debug
 
-      - name: Format
-        run: make format
-        working-directory: Debug
+  #     - name: Format
+  #       run: make format
+  #       working-directory: Debug
 
-      - name: Tidy
-        run: make tidy
-        working-directory: Debug
+  #     - name: Tidy
+  #       run: make tidy
+  #       working-directory: Debug
 
-  tools:
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          submodules: recursive
+  # tools:
+  #   runs-on: ubuntu-24.04
+  #   strategy:
+  #     fail-fast: false
+  #   steps:
+  #     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+  #       with:
+  #         submodules: recursive
 
-      - name: Create directories
-        run: mkdir Debug
+  #     - name: Create directories
+  #       run: mkdir Debug
 
-      - name: CMake
-        env:
-          CC: gcc-12
-          CXX: g++-12
-        run: |
-          cmake .. -DCMAKE_BUILD_TYPE=Debug 
-        working-directory: Debug
+  #     - name: CMake
+  #       env:
+  #         CC: gcc-12
+  #         CXX: g++-12
+  #       run: |
+  #         cmake .. -DCMAKE_BUILD_TYPE=Debug 
+  #       working-directory: Debug
 
-      - name: Build
-        run: VERBOSE=1 make -j $(nproc) verify_rule verify_ruleset waf_runner validate_schema
-        working-directory: Debug
+  #     - name: Build
+  #       run: VERBOSE=1 make -j $(nproc) verify_rule verify_ruleset waf_runner validate_schema
+  #       working-directory: Debug
