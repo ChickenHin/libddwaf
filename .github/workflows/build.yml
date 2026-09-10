@@ -1,15 +1,15 @@
 name: Build
 
 on:
-  push:
-    branches: [ master ]
-    tags:
-      - "*"
+  # push:
+  #   branches: [ master ]
+  #   tags:
+  #     - "*"
   pull_request:
     branches:
       - "**"
-  schedule:
-    - cron:  30 0 * * *
+  # schedule:
+  #   - cron:  30 0 * * *
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
